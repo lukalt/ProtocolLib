@@ -1,12 +1,5 @@
 package com.comphenix.protocol.injector.netty.manager;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLogger;
 import com.comphenix.protocol.concurrency.PacketTypeSet;
@@ -32,6 +25,13 @@ import com.comphenix.protocol.wrappers.Pair;
 import io.netty.channel.ChannelFuture;
 import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class NetworkManagerInjector implements ChannelListener {
 
@@ -93,7 +93,11 @@ public class NetworkManagerInjector implements ChannelListener {
         if (marker != null || MinecraftReflection.isBundlePacket(packetClass) || outboundListeners.contains(packetClass)) {
             // wrap packet and construct the event
             PacketType.Protocol currentProtocol = injector.getCurrentProtocol(PacketType.Sender.SERVER);
-            PacketContainer container = new PacketContainer(PacketRegistry.getPacketType(currentProtocol, packetClass), packet);
+            PacketType packetType = PacketRegistry.getPacketType(currentProtocol, packetClass);
+            if(packetType == null) {
+                throw new IllegalStateException("Unable to retrieve packet type for " + packetClass.getName() + " in protocol state " + currentProtocol.name());
+            }
+            PacketContainer container = new PacketContainer(packetType, packet);
             PacketEvent packetEvent = PacketEvent.fromServer(this, container, marker, injector.getPlayer());
 
             // post to all listeners, then return the packet event we constructed
